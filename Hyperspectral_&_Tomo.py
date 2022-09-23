@@ -6,28 +6,28 @@ Created on Wed Jul 20 13:31:49 2022
 @author: Jessica
 """
 
+#%% ------ libraries, general styling and folder paths -----
+# -- libraries --
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors
-import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
-import sif_reader
-from palettable.cmocean.sequential import Tempo_9
-from palettable.cubehelix import cubehelix1_16
-from copy import copy
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits.axes_grid1 import ImageGrid
-from matplotlib import ticker
 
+# -- general plot styles --
 matplotlib.rcParams['font.monospace'] = "Arial"
 matplotlib.rcParams['font.family'] = "monospace"
 matplotlib.rc('font', size=16)
 matplotlib.rcParams['axes.linewidth'] = 1
 
-fontsize = 16
+# -- data folder path --
+data_path = "<path of sample data>" + "/" # enter path of sample data
+filename_fourierspace = "fourier_space_data.txt" # this is the name of the sample data file
+filename_realspace = "real_space_data.txt" # this is the name of the sample data file
 
-saveFigures = True
+filename = "Hyperspectral_and_Tomo_above_threshold"
+
+# -- save option -- 
+saveFigures = False
 
 #%% functions
 def isfloat(num):
@@ -42,7 +42,7 @@ def get_brightest_point(data):
     value = data[brightestPoint[0],brightestPoint[1]] 
     return brightestPoint, value
 
-def get_intensity_k_energy_of_dispersion_txt(path_of_txt_dispersion):
+def get_intensity_k_energy_of_fourierspace_txt(path_of_txt_dispersion):
     with open(path_of_txt_dispersion) as f:
         lines = f.readlines()
         kTemp = [float(e) if isfloat(e) else e for e in lines[0].split(',')]
@@ -78,7 +78,7 @@ def get_values_of_isoEnergyCut_txt(path_of_txt_isoEnergyCut):
         
         return data
     
-def slice_dispersionData(dispersionIntensityData, kData, energyData, lowerELimit, upperELimit, lowerKLimit, upperKLimit):
+def slice_data(dispersionIntensityData, kData, energyData, lowerELimit, upperELimit, lowerKLimit, upperKLimit):
     for k in range(len(energyData)):
         if energyData[k] > lowerELimit:
             indexLowerE = dispersionIntensityData.shape[0] - k + 1
@@ -108,50 +108,26 @@ def slice_dispersionData(dispersionIntensityData, kData, energyData, lowerELimit
     
     return data
 
-def show_dispersion_data(data, extent):
-    plt.imshow(data, cmap='turbo', aspect='auto', extent=extent)
-    plt.colorbar()
-    plt.show()
     
 def forceAspect(ax,aspect):
     im = ax.get_images()
     extent =  im[0].get_extent()
     ax.set_aspect(abs((extent[1]-extent[0])/(extent[3]-extent[2]))/aspect)
     
-def get_char(i, alphabet = "abcdefghijklmnopqrstuvwxyz"):
-    return(alphabet[i % len(alphabet)])
 
-#%% data 
-path_disperionAbovePth = "/Users/Jessica/Library/CloudStorage/OneDrive-UniversitätWürzburg/Meine Dateien/0_Messdaten/2022-03-22_C4892_Kagome_Tomos_Spotsize_Barrieren/A41_b3_f40_20erObj_Tomo_ueberSchwelle/Hyperspectral/A41_b3_1p9mW_1.txt"
-# path_tomoAbovePth = "/Users/Jessica/Library/CloudStorage/OneDrive-UniversitätWürzburg/Meine Dateien/0_Messdaten/2022-03-22_C4892_Kagome_Tomos_Spotsize_Barrieren/A41_b3_f40_20erObj_Tomo_ueberSchwelle/energy1p60999.txt"
-path_tomoAbovePth = "/Users/Jessica/Library/CloudStorage/OneDrive-UniversitätWürzburg/Meine Dateien/1_Auswertung/4_2__PolaritonCondensation/4_2_3_Variation_Excitonic_Fraction/Modetomographies/b3/energy1p60944-1p61046.txt"
+#%% ------ create custom colormaps from colorlist ------
+colorlist_fourierspace = [(1,1,1), (62/255, 14/255, 56/255), (103/255, 24/255, 101/255), (248/255, 101/255, 46/255), (255/255, 255/255, 220/255)]  # R -> G -> B
+n_bins_fourierspace = 200  # discretizes the interpolation into bins
+cmap_name_fourierspace = 'cmap_fourierspace'
+colormap_fourierspace = LinearSegmentedColormap.from_list(cmap_name_fourierspace, colorlist_fourierspace, N=n_bins_fourierspace)
 
-saveFolderPath_daten = "/Users/Jessica/Library/CloudStorage/OneDrive-UniversitätWürzburg/Meine Dateien/0_Messdaten/2022-03-23_C4892_Kagome_Powerseries/A41_b3_f40_Powerserie/"
-saveFolderPath_auswertung = "/Users/Jessica/Library/CloudStorage/OneDrive-UniversitätWürzburg/Meine Dateien/1_Auswertung/4_2__PolaritonCondensation/4_2_2_Ground_state_condensation/"
-filename = "Hyperspectral_and_Tomo_above_threshold"
-
-#%%create custom colormap
-palette = copy(plt.get_cmap('viridis_r'))
-palette.set_under('white', 1.0)  # 1.0 represents not transparent
-
-# create custom colormap from colorlist
-colorlist = [(1,1,1), (62/255, 14/255, 56/255), (103/255, 24/255, 101/255), (248/255, 101/255, 46/255), (255/255, 255/255, 220/255)]  # R -> G -> B
-n_bins = 200  # Discretizes the interpolation into bins
-cmap_name = 'my_list'
-colormapCustom = LinearSegmentedColormap.from_list(cmap_name, colorlist, N=n_bins)
-
-colorlist_interferogram = [(225/255,237/255,247/255),(33/255, 62/255, 106/255),(103/255,28/255,80/255),(155/255,43/255,121/255),(248/255,228/255,242/255)]
-n_bins_interferogram = 500
-cmap_name_interferogram = 'cmap_interferogram'
-colormap_interferogram = LinearSegmentedColormap.from_list(cmap_name_interferogram, colorlist_interferogram, N=n_bins_interferogram)
-
-colorlist_tomo = [(255/255,255/255,255/255),(43/255, 0/255, 0/255),(155/255,0/255,0/255),(255/255,35/255,0/255),(255/255,139/255,0/255),(255/255,255/255,34/255),(255/255,255/255,219/255)]
-n_bins_tomo = 500
-cmap_name_tomo = 'cmap_tomo'
-colormap_tomo = LinearSegmentedColormap.from_list(cmap_name_tomo, colorlist_tomo, N=n_bins_tomo)
+colorlist_realspace = [(255/255,255/255,255/255),(43/255, 0/255, 0/255),(155/255,0/255,0/255),(255/255,35/255,0/255),(255/255,139/255,0/255),(255/255,255/255,34/255),(255/255,255/255,219/255)]
+n_bins_realspace = 500
+cmap_name_realspace = 'cmap_realspace'
+colormap_realspace = LinearSegmentedColormap.from_list(cmap_name_realspace, colorlist_realspace, N=n_bins_realspace)
 
 
-#%% --- option to limit the energy range ---
+#%% ------ limit the energy range and realspace ranges ------
 selectedlowerEnergyLimit = 1.606
 selectedupperEnergyLimit = 1.614
 selectedlowerkLimit = -3.0
@@ -162,56 +138,52 @@ selectedYmin = 10
 selectedXmax = 30
 selectedXmin = 10
 
-#%% plot
-# dispersion
-dispersionData_abovePth = get_intensity_k_energy_of_dispersion_txt(path_disperionAbovePth)
-data_abovePth_dispersion = slice_dispersionData(dispersionData_abovePth['IntensityValues'], dispersionData_abovePth['KValues'], dispersionData_abovePth['EnergyValues'],selectedlowerEnergyLimit, selectedupperEnergyLimit, selectedlowerkLimit, selectedupperkLimit)
-# show_dispersion_data(data_abovePth_dispersion['Data'], data_abovePth_dispersion['Extent'])
+#%% ------ plot data ------
+# -- format fourier space --
+fourierspace_data = get_intensity_k_energy_of_fourierspace_txt(data_path + filename_fourierspace)
+sliced_fourierspace_data = slice_data(fourierspace_data['IntensityValues'], fourierspace_data['KValues'], fourierspace_data['EnergyValues'],selectedlowerEnergyLimit, selectedupperEnergyLimit, selectedlowerkLimit, selectedupperkLimit)
 
-# tomo
-tomoData_abovePth = get_values_of_isoEnergyCut_txt(path_tomoAbovePth)
-# show_dispersion_data(tomoData_abovePth['IntensityValues'], tomoData_abovePth['Extent'])
-data_abovePth_tomo = slice_dispersionData(tomoData_abovePth['IntensityValues'], tomoData_abovePth['xkValues'], tomoData_abovePth['ykValues'], selectedYmin, selectedYmax, selectedXmin, selectedXmax)
-# show_dispersion_data(data_abovePth_tomo['Data'], data_abovePth_tomo['Extent'])
+# -- format real space --
+realspace_data = get_values_of_isoEnergyCut_txt(data_path + filename_realspace)
+sliced_frealspace_data = slice_data(realspace_data['IntensityValues'], realspace_data['xkValues'], realspace_data['ykValues'], selectedYmin, selectedYmax, selectedXmin, selectedXmax)
 
+# -- set aspect ratios --
 kDiff = selectedupperkLimit-selectedlowerkLimit
 energyDiff = selectedupperEnergyLimit-selectedlowerEnergyLimit
-aspect_dispersion = kDiff/energyDiff 
-
+aspect_fourierspace = kDiff/energyDiff 
 aspect_tomo = 1
     
-
-# dispersion plot
-plt.imshow(data_abovePth_dispersion['Data'], cmap=colormapCustom, aspect=aspect_dispersion, extent=data_abovePth_dispersion['Extent'])
+# -- fourier space plot --
+plt.imshow(sliced_fourierspace_data['Data'], cmap=colormap_fourierspace, aspect=aspect_fourierspace, extent=sliced_fourierspace_data['Extent'])
 ax = plt.gca();
 forceAspect(ax,aspect=1.0)
-ax.tick_params(which="major", direction='in')#, width=1.3)
-ax.tick_params(which="minor", direction='in')#, width=1.3)
+ax.tick_params(which="major", direction='in')
+ax.tick_params(which="minor", direction='in')
 ax.yaxis.set_ticks_position('both')
 ax.xaxis.set_ticks_position('both')
 plt.xlabel('$k_\mathregular{y}$ ($\mu \mathregular{m}^{-1}$)')
 plt.ylabel('Energy (eV)')
 v1 = np.linspace(0, 1, 6, endpoint=True)
 cbar = plt.colorbar(pad = 0.02, ticks=v1)
-cbar.set_label('Intensity (arb. u.)', fontsize=12, rotation=90, labelpad=-40, color="white")
+cbar.set_label('Intensity (arb. u.)', fontsize=12, rotation=90, labelpad=-38, color="white")
 if saveFigures:    
-    plt.savefig(saveFolderPath_auswertung + '4_2_2_hyperspectral_above_threshold' + '.png', format='png', bbox_inches='tight', dpi=1000)
+    plt.savefig(data_path + 'fourier_space_image' + '.png', format='png', bbox_inches='tight', dpi=1000)
 plt.show()
 
-# tomo plot
-plt.imshow(data_abovePth_tomo['Data'], cmap=colormap_tomo, aspect=aspect_tomo, extent=[0,20,0,20])
+# -- real space plot --
+plt.imshow(sliced_frealspace_data['Data'], cmap=colormap_realspace, aspect=aspect_tomo, extent=[0,20,0,20])
 ax = plt.gca();
 forceAspect(ax,aspect=1.0)
-ax.tick_params(which="major", direction='in')#, width=1.3)
-ax.tick_params(which="minor", direction='in')#, width=1.3)
+ax.tick_params(which="major", direction='in')
+ax.tick_params(which="minor", direction='in')
 ax.yaxis.set_ticks_position('both')
 ax.xaxis.set_ticks_position('both')
 plt.xlabel('y ($\mu \mathregular{m}$)')
 plt.ylabel('x ($\mu \mathregular{m}$)')
 v1 = np.linspace(0, 1, 6, endpoint=True)
 cbar = plt.colorbar(pad = 0.02, ticks=v1)
-cbar.set_label('Intensity (arb. u.)', fontsize=12, rotation=90, labelpad=-40, color="white")
+cbar.set_label('Intensity (arb. u.)', fontsize=12, rotation=90, labelpad=-38, color="white")
 if saveFigures:    
-    plt.savefig(saveFolderPath_auswertung + '4_2_2_modetomography_above_threshold' + '.png', format='png', bbox_inches='tight', dpi=3000)
+    plt.savefig(data_path + 'real_space_image' + '.png', format='png', bbox_inches='tight', dpi=3000)
 plt.show()
 
