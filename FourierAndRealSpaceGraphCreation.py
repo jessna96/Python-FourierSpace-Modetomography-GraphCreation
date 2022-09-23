@@ -24,12 +24,10 @@ data_path = "<path of sample data>" + "/" # enter path of sample data
 filename_fourierspace = "fourier_space_data.txt" # this is the name of the sample data file
 filename_realspace = "real_space_data.txt" # this is the name of the sample data file
 
-filename = "Hyperspectral_and_Tomo_above_threshold"
-
 # -- save option -- 
 saveFigures = False
 
-#%% functions
+#%% ------ functions ------
 def isfloat(num):
     try:
         float(num)
